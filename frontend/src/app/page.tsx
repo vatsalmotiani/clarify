@@ -4,19 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Shield, Target, Languages, Sparkles } from "lucide-react";
+import { Shield, Target, Languages, Sparkles, User } from "lucide-react";
 import { FileDropzone } from "@/components/features/file-dropzone";
 import { LanguageSelector } from "@/components/features/language-selector";
-import { uploadDocuments, startAnalysis } from "@/lib/api";
+import { Sidebar } from "@/components/features/sidebar";
+import { AuthModal } from "@/components/features/auth-modal";
+import { Button } from "@/components/ui/button";
+import { uploadDocuments, startAnalysis, createGuestSession } from "@/lib/api";
 import { useAnalysisStore } from "@/stores/analysis-store";
 import { useLanguage, getLanguageName } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const { setAnalysisId, setUploadedFiles, setStatus } = useAnalysisStore();
   const { t, lockLanguage, unlockLanguage, language } = useLanguage();
+  const { isAuthenticated, isGuest, user, isLoading: authLoading } = useAuth();
 
   // Unlock language when returning to home page
   useEffect(() => {
@@ -24,6 +31,17 @@ export default function Home() {
   }, [unlockLanguage]);
 
   const handleFilesSelected = async (files: File[]) => {
+    // If not authenticated and not in guest mode, show auth modal
+    if (!isAuthenticated && !isGuest) {
+      setPendingFiles(files);
+      setShowAuthModal(true);
+      return;
+    }
+
+    await processUpload(files);
+  };
+
+  const processUpload = async (files: File[]) => {
     setIsUploading(true);
     setError(null);
 
@@ -58,12 +76,21 @@ export default function Home() {
     }
   };
 
+  const handleAuthSuccess = () => {
+    // If there were pending files, process them now
+    if (pendingFiles) {
+      processUpload(pendingFiles);
+      setPendingFiles(null);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <Sidebar onSignInClick={() => setShowAuthModal(true)} />
             <Image
               src="/logo.jpg"
               alt="Clarify"
@@ -76,7 +103,28 @@ export default function Home() {
               <Sparkles className="w-4 h-4 text-primary" />
             </span>
           </div>
-          <LanguageSelector />
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            {!authLoading && !isAuthenticated && !isGuest && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAuthModal(true)}
+                className="gap-2"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("auth.signIn")}</span>
+              </Button>
+            )}
+            {isAuthenticated && user && (
+              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-3 h-3 text-primary" />
+                </div>
+                <span className="max-w-[120px] truncate">{user.email}</span>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -164,6 +212,16 @@ export default function Home() {
           <p>{t("home.footer")}</p>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingFiles(null);
+        }}
+        onSuccess={handleAuthSuccess}
+      />
     </main>
   );
 }

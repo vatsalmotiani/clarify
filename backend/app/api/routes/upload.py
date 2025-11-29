@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from typing import List
 import uuid
 import os
@@ -6,6 +6,7 @@ from pathlib import Path
 from app.config import settings
 from app.models.schemas import UploadResponse, FileMetadata, ErrorResponse
 from app.core.logging import get_logger
+from app.core.dependencies import get_current_user_from_request
 
 router = APIRouter()
 logger = get_logger("clarify.upload")
@@ -33,12 +34,19 @@ def validate_pdf(file: UploadFile) -> tuple[bool, str]:
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_documents(files: List[UploadFile] = File(...)):
+async def upload_documents(request: Request, files: List[UploadFile] = File(...)):
     """
     Upload PDF documents for analysis.
     Accepts up to 5 PDF files, max 10MB each.
+    Optionally associates with authenticated user or marks as guest.
     """
     logger.info(f"📤 Upload request received: {len(files)} file(s)")
+
+    # Check for authenticated user or guest mode
+    user = await get_current_user_from_request(request)
+    guest_id = request.cookies.get("guest_id")
+    user_id = user["id"] if user else None
+    is_guest = guest_id is not None and user_id is None
 
     # Validate file count
     if len(files) > settings.MAX_FILES_PER_UPLOAD:
@@ -103,6 +111,21 @@ async def upload_documents(files: List[UploadFile] = File(...)):
         ))
 
     logger.info(f"✅ Upload complete: {len(validated_files)} file(s), analysis_id={analysis_id}")
+    if user_id:
+        logger.info(f"   Associated with user: {user_id}")
+    elif is_guest:
+        logger.info(f"   Guest mode: {guest_id}")
+
+    # Store user/guest info for the analysis (will be picked up by workflow)
+    # Save a metadata file for the workflow to use
+    import json
+    meta_path = analysis_dir / ".metadata.json"
+    with open(meta_path, "w") as f:
+        json.dump({
+            "user_id": user_id,
+            "is_guest": is_guest,
+            "guest_id": guest_id if is_guest else None
+        }, f)
 
     return UploadResponse(
         analysis_id=analysis_id,

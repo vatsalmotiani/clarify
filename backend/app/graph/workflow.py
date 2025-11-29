@@ -5,6 +5,7 @@ Uses OpenAI Files API + Responses API for processing.
 
 from pathlib import Path
 import time
+import json
 from app.graph.state import AnalysisState
 from app.graph.nodes import (
     file_upload_node,
@@ -17,6 +18,21 @@ from app.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger("clarify.workflow")
+
+# Temp directory for uploaded files
+TEMP_DIR = Path(settings.TEMP_DIR)
+
+
+def get_analysis_metadata(analysis_id: str) -> dict:
+    """Read user/guest metadata from the upload directory."""
+    meta_path = TEMP_DIR / analysis_id / ".metadata.json"
+    if meta_path.exists():
+        try:
+            with open(meta_path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"user_id": None, "is_guest": False, "guest_id": None}
 
 
 async def run_analysis_workflow(analysis_id: str, language: str = "English"):
@@ -35,32 +51,45 @@ async def run_analysis_workflow(analysis_id: str, language: str = "English"):
 
     supabase = get_supabase_client()
 
-    # Create initial analysis record with language
+    # Get user/guest metadata from upload
+    metadata = get_analysis_metadata(analysis_id)
+    user_id = metadata.get("user_id")
+    is_guest = metadata.get("is_guest", False)
+
+    # Create initial analysis record with language and user info
     if supabase:
         try:
             logger.debug(f"Creating analysis record in database...")
-            # Try to insert with language column first
+            insert_data = {
+                "id": analysis_id,
+                "document_names": [],
+                "domain": "",
+                "intent": "",
+                "language": language,
+                "overall_score": 0,
+                "score_components": {},
+                "red_flags": [],
+                "scenarios": [],
+                "key_terms": [],
+                "missing_clauses": [],
+                "openai_file_ids": [],
+                "current_step": "uploading",
+                "is_guest": is_guest
+            }
+            # Add user_id if authenticated
+            if user_id:
+                insert_data["user_id"] = user_id
+                logger.info(f"Analysis associated with user: {user_id}")
+            elif is_guest:
+                logger.info(f"Guest mode analysis")
+
             try:
-                supabase.table("analyses").insert({
-                    "id": analysis_id,
-                    "document_names": [],
-                    "domain": "",
-                    "intent": "",
-                    "language": language,
-                    "overall_score": 0,
-                    "score_components": {},
-                    "red_flags": [],
-                    "scenarios": [],
-                    "key_terms": [],
-                    "missing_clauses": [],
-                    "openai_file_ids": [],
-                    "current_step": "uploading"
-                }).execute()
+                supabase.table("analyses").insert(insert_data).execute()
                 logger.info(f"Analysis record created in database (language: {language})")
             except Exception as lang_err:
-                # If language column doesn't exist, try without it
-                logger.warning(f"Insert with language failed, trying without: {lang_err}")
-                supabase.table("analyses").insert({
+                # If some columns don't exist, try with minimal data
+                logger.warning(f"Insert failed, trying minimal: {lang_err}")
+                minimal_data = {
                     "id": analysis_id,
                     "document_names": [],
                     "domain": "",
@@ -73,8 +102,9 @@ async def run_analysis_workflow(analysis_id: str, language: str = "English"):
                     "missing_clauses": [],
                     "openai_file_ids": [],
                     "current_step": "uploading"
-                }).execute()
-                logger.info(f"Analysis record created in database (without language column)")
+                }
+                supabase.table("analyses").insert(minimal_data).execute()
+                logger.info(f"Analysis record created in database (minimal)")
         except Exception as e:
             logger.error(f"Failed to create analysis record: {e}")
 
