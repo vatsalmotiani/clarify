@@ -2,7 +2,7 @@
 
 AI-powered document clarification platform. Upload contracts, leases, or agreements and get plain-English insights on what matters most.
 
-(Watch Demo)[https://drive.google.com/file/d/1z8lXv59ZSPH5GrnTOZckWlxIqBEO0VGG/view?usp=drivesdk]
+[![Watch the demo](assets/demo.gif)](https://drive.google.com/file/d/1z8lXv59ZSPH5GrnTOZckWlxIqBEO0VGG/view?usp=drivesdk)
 
 ## Project Structure
 
