@@ -123,7 +123,8 @@ Analyze the document content and provide your assessment."""
         file_ids: List[str],
         domain: str,
         intent: str,
-        user_notes: Optional[str] = None
+        user_notes: Optional[str] = None,
+        language: str = "English"
     ) -> Dict[str, Any]:
         """
         Perform full document analysis using Responses API with file references.
@@ -133,11 +134,12 @@ Analyze the document content and provide your assessment."""
             domain: Detected document domain
             intent: User's selected intent (e.g., "tenant", "buyer")
             user_notes: Optional additional context from user
+            language: Language for all output text (e.g., "English", "Hindi", "Marathi")
 
         Returns:
             Full analysis result matching the ANALYSIS_SCHEMA
         """
-        logger.info(f"Starting document analysis - domain: {domain}, intent: {intent}")
+        logger.info(f"Starting document analysis - domain: {domain}, intent: {intent}, language: {language}")
         start_time = time.time()
 
         if not self.client:
@@ -152,12 +154,23 @@ Analyze the document content and provide your assessment."""
             # Get intent description
             intent_description = self._get_intent_description(domain, intent)
 
-            # Build system prompt
+            # Build system prompt with language instruction
+            language_instruction = ""
+            if language != "English":
+                language_instruction = f"""
+IMPORTANT - OUTPUT LANGUAGE:
+You MUST write ALL your analysis output in {language}.
+This includes: executive summary, document summary, key term definitions,
+red flag titles/summaries/explanations/recommendations, scenario descriptions,
+and all other text content. The JSON keys remain in English, but all values
+containing human-readable text must be written in {language}.
+"""
+
             system_prompt = f"""You are Clarify, an AI document analyst specialized in {domain} documents.
 
 Your role is to help a layperson understand this document given their intent: "{intent}"
 {intent_description}
-
+{language_instruction}
 ANALYSIS REQUIREMENTS:
 1. Provide a Smart Score (0-100) based on:
    - Red flag severity and count
@@ -170,6 +183,9 @@ ANALYSIS REQUIREMENTS:
    - Exact quotes from the document
    - Plain language explanations
    - Actionable recommendations
+   - 3 UNIQUE questions to ask the other party (specific to THIS red flag)
+   - 3 UNIQUE suggested modifications (specific to THIS clause)
+   - Professional advice tailored to THIS specific issue
 
 3. Gap analysis:
    - Missing clauses that should be present
@@ -180,6 +196,18 @@ ANALYSIS REQUIREMENTS:
    - Likelihood and impact
 
 5. Follow-up questions for a lawyer or the other party
+
+RED FLAG SEVERITY GUIDELINES:
+- CRITICAL: At least ONE red flag should be marked "critical" - identify the MOST concerning clause in the document that could cause the user significant harm. Every document has something that deserves critical attention.
+- HIGH: Issues that could cause financial loss or legal problems
+- MEDIUM: Unfavorable but common terms
+- LOW: Minor concerns worth noting
+- INFO: Informational notes
+
+CRITICAL RULES FOR ACTION ITEMS:
+- questions_to_ask: Must be 3 UNIQUE questions specific to this exact red flag. Do NOT repeat generic questions across red flags.
+- suggested_changes: Must be 3 UNIQUE modification suggestions specific to this exact clause. Each red flag needs distinct suggestions.
+- professional_advice: Must specify the TYPE of professional (e.g., "employment lawyer", "real estate attorney") and WHY they're needed for THIS specific issue.
 
 CRITICAL RULES - ZERO HALLUCINATION:
 - ONLY cite issues that ACTUALLY EXIST in the document
@@ -192,6 +220,7 @@ CRITICAL RULES - ZERO HALLUCINATION:
 Use 8th-grade reading level. Avoid legal jargon - explain everything simply."""
 
             # Build user query
+            output_language_note = f" Provide all output in {language}." if language != "English" else ""
             user_query = f"""Domain: {domain}
 Intent: {intent}
 User Context: {user_notes or "Not provided"}
@@ -206,7 +235,7 @@ Please analyze the uploaded document(s) and provide:
 7. Scenarios and their implications
 8. Missing clauses
 9. Positive notes about the document
-10. Follow-up questions to ask"""
+10. Follow-up questions to ask{output_language_note}"""
 
             # Build input content
             user_content = [

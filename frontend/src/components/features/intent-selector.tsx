@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DomainIntents, IntentOption } from "@/types";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface IntentSelectorProps {
   domainIntents: DomainIntents;
@@ -13,21 +14,13 @@ interface IntentSelectorProps {
   isLoading?: boolean;
 }
 
-const domainDisplayNames: Record<string, string> = {
-  real_estate: "Real Estate",
-  employment: "Employment",
-  finance: "Finance",
-  rental: "Rental/Lease",
-  insurance: "Insurance",
-  legal_agreement: "Legal Agreement",
-};
-
 export function IntentSelector({
   domainIntents,
   onSelect,
   isLoading = false,
 }: IntentSelectorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleSelect = (intentId: string) => {
     setSelectedId(intentId);
@@ -39,7 +32,7 @@ export function IntentSelector({
     }
   };
 
-  const domainName = domainDisplayNames[domainIntents.domain] || domainIntents.domain;
+  const domainName = t(`intent.domains.${domainIntents.domain}`) || domainIntents.domain;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -48,9 +41,9 @@ export function IntentSelector({
         {/* Header */}
         <div className="text-center mb-6">
           <p className="text-sm text-muted-foreground mb-1">
-            Document type: <span className="font-medium text-foreground">{domainName}</span>
+            {t("intent.documentType")} <span className="font-medium text-foreground">{domainName}</span>
           </p>
-          <h2 className="text-xl font-semibold">What&apos;s your goal?</h2>
+          <h2 className="text-xl font-semibold">{t("intent.whatsYourGoal")}</h2>
         </div>
 
         {/* Intent options */}
@@ -72,7 +65,7 @@ export function IntentSelector({
           disabled={!selectedId || isLoading}
           className="w-full"
         >
-          {isLoading ? "Starting..." : "Continue"}
+          {isLoading ? t("common.starting") : t("common.continue")}
         </Button>
       </div>
     </div>

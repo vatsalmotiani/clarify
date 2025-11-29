@@ -4,6 +4,7 @@ from typing import TypedDict, List, Dict, Optional, Any
 class AnalysisState(TypedDict):
     # Input
     analysis_id: str
+    language: str  # User's selected language for LLM outputs (e.g., "English", "Hindi", "Marathi")
 
     # OpenAI File IDs - uploaded files for reuse across prompts
     openai_file_ids: List[str]  # File IDs returned from OpenAI Files API

@@ -17,12 +17,14 @@ import {
 } from "@/lib/api";
 import { useAnalysisStore } from "@/stores/analysis-store";
 import { usePolling } from "@/hooks/use-polling";
+import { useLanguage } from "@/context/LanguageContext";
 import type { AnalysisStatus } from "@/types";
 
 export default function AnalysisPage() {
   const params = useParams();
   const router = useRouter();
   const analysisId = params.id as string;
+  const { t } = useLanguage();
 
   const {
     status,
@@ -99,7 +101,7 @@ export default function AnalysisPage() {
     setIsSelectingIntent(true);
     try {
       await selectIntent(analysisId, intentId);
-      setStatus("analyzing", 50, "Analyzing your documents...");
+      setStatus("analyzing", 50, t("analysis.analyzingDocs"));
     } catch (err) {
       console.error("Intent selection error:", err);
       setError("Failed to select intent. Please try again.");
@@ -129,7 +131,7 @@ export default function AnalysisPage() {
                 height={32}
                 className="rounded-lg"
               />
-              <span className="text-xl font-bold text-[#1E3A5F]">Clarify.</span>
+              <span className="text-xl font-bold text-[#1E3A5F]">{t("common.clarify")}</span>
             </div>
           </div>
         </div>
@@ -194,10 +196,10 @@ export default function AnalysisPage() {
               className="py-16 text-center"
             >
               <h2 className="text-2xl font-semibold text-destructive mb-4">
-                Something went wrong
+                {t("analysis.somethingWentWrong")}
               </h2>
               <p className="text-muted-foreground mb-6">{statusMessage}</p>
-              <Button onClick={handleBack}>Try Again</Button>
+              <Button onClick={handleBack}>{t("common.tryAgain")}</Button>
             </motion.div>
           )}
         </AnimatePresence>

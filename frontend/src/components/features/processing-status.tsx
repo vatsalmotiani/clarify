@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, FileText, AlertTriangle, Scale, Eye, Lock } from "lucide-react";
 import type { AnalysisStatus } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ProcessingStatusProps {
   status: AnalysisStatus;
@@ -11,49 +12,55 @@ interface ProcessingStatusProps {
   message: string;
 }
 
-// Rotating steps with icons and engaging sales facts
-const rotatingSteps = [
-  {
-    icon: Search,
-    title: "Scanning for hidden clauses",
-    fact: "73% of contracts contain terms that favor one party significantly"
-  },
-  {
-    icon: FileText,
-    title: "Looking for buried fees",
-    fact: "The average person misses 3-5 important clauses per contract"
-  },
-  {
-    icon: AlertTriangle,
-    title: "Identifying red flags",
-    fact: "1 in 4 contracts have automatic renewal clauses that catch people off guard"
-  },
-  {
-    icon: Lock,
-    title: "Spotting loopholes",
-    fact: "Most people spend less than 5 minutes reading contracts they sign"
-  },
-  {
-    icon: Scale,
-    title: "Checking for balance",
-    fact: "Unfair termination clauses are found in 60% of service agreements"
-  },
-  {
-    icon: Eye,
-    title: "Finding what's missing",
-    fact: "Key protections are often absent from standard templates"
-  },
-];
+// Step icons mapping
+const stepIcons = [Search, FileText, AlertTriangle, Lock, Scale, Eye];
 
 export function ProcessingStatus({
   progress,
 }: ProcessingStatusProps) {
   const [stepIndex, setStepIndex] = useState(0);
+  const { t } = useLanguage();
+
+  // Get translated steps
+  const getRotatingSteps = () => [
+    {
+      icon: Search,
+      title: t("processing.steps.scanning"),
+      fact: t("processing.steps.scanningFact")
+    },
+    {
+      icon: FileText,
+      title: t("processing.steps.lookingFees"),
+      fact: t("processing.steps.lookingFeesFact")
+    },
+    {
+      icon: AlertTriangle,
+      title: t("processing.steps.identifyingFlags"),
+      fact: t("processing.steps.identifyingFlagsFact")
+    },
+    {
+      icon: Lock,
+      title: t("processing.steps.spottingLoopholes"),
+      fact: t("processing.steps.spottingLoopholesFact")
+    },
+    {
+      icon: Scale,
+      title: t("processing.steps.checkingBalance"),
+      fact: t("processing.steps.checkingBalanceFact")
+    },
+    {
+      icon: Eye,
+      title: t("processing.steps.findingMissing"),
+      fact: t("processing.steps.findingMissingFact")
+    },
+  ];
+
+  const rotatingSteps = getRotatingSteps();
 
   // Rotate steps every 4 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setStepIndex((prev) => (prev + 1) % rotatingSteps.length);
+      setStepIndex((prev) => (prev + 1) % 6);
     }, 4000);
     return () => clearInterval(interval);
   }, []);
@@ -125,7 +132,7 @@ export function ProcessingStatus({
             transition={{ duration: 0.3 }}
             className="text-center"
           >
-            <p className="text-sm text-primary font-medium mb-1">Did you know?</p>
+            <p className="text-sm text-primary font-medium mb-1">{t("processing.didYouKnow")}</p>
             <p className="text-base text-foreground leading-relaxed">
               {currentStep.fact}
             </p>

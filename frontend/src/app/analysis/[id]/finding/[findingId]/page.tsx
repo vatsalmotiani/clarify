@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { getAnalysisResult } from "@/lib/api";
 import type { RedFlag } from "@/types";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function FindingDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useLanguage();
   const [finding, setFinding] = useState<RedFlag | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeAction, setActiveAction] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function FindingDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <div className="animate-pulse text-muted-foreground">{t("common.loading")}</div>
       </div>
     );
   }
@@ -46,40 +48,40 @@ export default function FindingDetailPage() {
   if (!finding) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Finding not found</p>
-        <Button onClick={() => router.back()}>Go Back</Button>
+        <p className="text-muted-foreground">{t("finding.findingNotFound")}</p>
+        <Button onClick={() => router.back()}>{t("common.goBack")}</Button>
       </div>
     );
   }
 
-  const severityConfig: Record<string, { icon: typeof AlertOctagon; label: string; color: string; bgColor: string }> = {
+  const severityConfig: Record<string, { icon: typeof AlertOctagon; labelKey: string; color: string; bgColor: string }> = {
     critical: {
       icon: AlertOctagon,
-      label: "Critical",
+      labelKey: "severity.critical",
       color: "text-red-600",
       bgColor: "bg-red-100 dark:bg-red-900/30",
     },
     high: {
       icon: AlertCircle,
-      label: "High Priority",
+      labelKey: "severity.high",
       color: "text-orange-600",
       bgColor: "bg-orange-100 dark:bg-orange-900/30",
     },
     medium: {
       icon: AlertTriangle,
-      label: "Medium",
+      labelKey: "severity.medium",
       color: "text-yellow-600",
       bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
     },
     low: {
       icon: Info,
-      label: "Low",
+      labelKey: "severity.low",
       color: "text-blue-600",
       bgColor: "bg-blue-100 dark:bg-blue-900/30",
     },
     info: {
       icon: Info,
-      label: "Info",
+      labelKey: "severity.info",
       color: "text-blue-600",
       bgColor: "bg-blue-100 dark:bg-blue-900/30",
     },
@@ -88,137 +90,147 @@ export default function FindingDetailPage() {
   const config = severityConfig[finding.severity] || severityConfig.medium;
   const SeverityIcon = config.icon;
 
-  // Generate dynamic action cards based on the specific finding
-  const generateAskQuestions = (finding: RedFlag): string => {
-    const title = finding.title.toLowerCase();
-    const questions: string[] = [];
-
-    if (title.includes("termination") || title.includes("cancel")) {
-      questions.push(`"What are the specific conditions under which either party can terminate?"`);
-      questions.push(`"Is there a notice period required, and can it be negotiated?"`);
-      questions.push(`"What happens to any prepaid fees if the contract is terminated early?"`);
-    } else if (title.includes("liability") || title.includes("indemnif")) {
-      questions.push(`"Can you cap the liability to a specific dollar amount?"`);
-      questions.push(`"What insurance coverage do you have for these liabilities?"`);
-      questions.push(`"Are there any exclusions to this liability clause?"`);
-    } else if (title.includes("auto") && title.includes("renew")) {
-      questions.push(`"Can we change this to require active opt-in for renewal?"`);
-      questions.push(`"What is the deadline to cancel before auto-renewal?"`);
-      questions.push(`"Will you notify me before the renewal date?"`);
-    } else if (title.includes("payment") || title.includes("fee") || title.includes("price")) {
-      questions.push(`"Are there any hidden fees or additional charges not listed?"`);
-      questions.push(`"What happens if I miss a payment deadline?"`);
-      questions.push(`"Can the pricing change during the contract term?"`);
-    } else if (title.includes("data") || title.includes("privacy") || title.includes("confidential")) {
-      questions.push(`"How will my data be stored and protected?"`);
-      questions.push(`"Who has access to my information?"`);
-      questions.push(`"What happens to my data if I terminate the agreement?"`);
-    } else if (title.includes("non-compete") || title.includes("restrict")) {
-      questions.push(`"What is the geographic scope of this restriction?"`);
-      questions.push(`"How long does this restriction last after the contract ends?"`);
-      questions.push(`"What specific activities are prohibited?"`);
-    } else {
-      questions.push(`"Can you explain why '${finding.title}' is structured this way?"`);
-      questions.push(`"Is there flexibility to modify this specific term?"`);
-      questions.push(`"What would happen if we removed or changed this clause?"`);
+  // Generate action card content - use LLM-generated content if available, fallback to templates
+  const getAskQuestionsContent = (finding: RedFlag): string => {
+    // Use LLM-generated questions if available
+    if (finding.questions_to_ask && finding.questions_to_ask.length > 0) {
+      return `${t("actions.askQuestions.beforeSigning", { title: finding.title })}\n\n${finding.questions_to_ask.map(q => `• "${q}"`).join('\n')}\n\n${t("actions.askQuestions.helpNegotiate")}`;
     }
 
-    return `Before signing, ask about "${finding.title}":\n\n${questions.map(q => `• ${q}`).join('\n')}\n\nThese questions help you understand the intent and may reveal room for negotiation.`;
-  };
-
-  const generateModifications = (finding: RedFlag): string => {
+    // Fallback to template-based questions
     const title = finding.title.toLowerCase();
-    const severity = finding.severity;
-    const modifications: string[] = [];
+    let questions: string[];
 
     if (title.includes("termination") || title.includes("cancel")) {
-      modifications.push("Request a mutual termination clause with equal notice periods for both parties");
-      modifications.push("Add a 'cure period' allowing time to fix issues before termination");
-      modifications.push("Include prorated refund terms for early termination");
+      questions = [t("actions.askQuestions.termination.q1"), t("actions.askQuestions.termination.q2"), t("actions.askQuestions.termination.q3")];
     } else if (title.includes("liability") || title.includes("indemnif")) {
-      modifications.push("Cap liability to the total contract value or a specific amount");
-      modifications.push("Exclude consequential and indirect damages");
-      modifications.push("Require the other party to maintain adequate insurance");
+      questions = [t("actions.askQuestions.liability.q1"), t("actions.askQuestions.liability.q2"), t("actions.askQuestions.liability.q3")];
     } else if (title.includes("auto") && title.includes("renew")) {
-      modifications.push("Change to opt-in renewal requiring written consent");
-      modifications.push("Extend the cancellation notice period to 60 or 90 days");
-      modifications.push("Add a requirement for renewal reminder notifications");
+      questions = [t("actions.askQuestions.autoRenew.q1"), t("actions.askQuestions.autoRenew.q2"), t("actions.askQuestions.autoRenew.q3")];
     } else if (title.includes("payment") || title.includes("fee") || title.includes("price")) {
-      modifications.push("Lock in pricing for the full contract term");
-      modifications.push("Add a grace period for late payments before penalties apply");
-      modifications.push("Cap any price increases to a fixed percentage");
+      questions = [t("actions.askQuestions.payment.q1"), t("actions.askQuestions.payment.q2"), t("actions.askQuestions.payment.q3")];
     } else if (title.includes("data") || title.includes("privacy") || title.includes("confidential")) {
-      modifications.push("Add specific data deletion requirements upon termination");
-      modifications.push("Require notification within 24-48 hours of any data breach");
-      modifications.push("Limit data usage to only what's necessary for the service");
+      questions = [t("actions.askQuestions.data.q1"), t("actions.askQuestions.data.q2"), t("actions.askQuestions.data.q3")];
     } else if (title.includes("non-compete") || title.includes("restrict")) {
-      modifications.push("Narrow the geographic scope to a specific region");
-      modifications.push("Reduce the duration of the restriction");
-      modifications.push("Add specific carve-outs for your core business activities");
+      questions = [t("actions.askQuestions.nonCompete.q1"), t("actions.askQuestions.nonCompete.q2"), t("actions.askQuestions.nonCompete.q3")];
     } else {
-      modifications.push(`Request clearer language defining the scope of "${finding.title}"`);
-      modifications.push("Add specific limits or boundaries to reduce your exposure");
-      modifications.push("Include exceptions for reasonable circumstances");
+      questions = [
+        t("actions.askQuestions.generic.q1", { title: finding.title }),
+        t("actions.askQuestions.generic.q2"),
+        t("actions.askQuestions.generic.q3")
+      ];
+    }
+
+    return `${t("actions.askQuestions.beforeSigning", { title: finding.title })}\n\n${questions.map(q => `• ${q}`).join('\n')}\n\n${t("actions.askQuestions.helpNegotiate")}`;
+  };
+
+  const getModificationsContent = (finding: RedFlag): string => {
+    const severity = finding.severity;
+
+    // Use LLM-generated modifications if available
+    if (finding.suggested_changes && finding.suggested_changes.length > 0) {
+      const urgencyNote = severity === "critical" || severity === "high"
+        ? `\n\n${t("actions.modifications.severityWarning")}`
+        : "";
+      return `${t("actions.modifications.suggestedFor", { title: finding.title })}\n\n${finding.suggested_changes.map(m => `• ${m}`).join('\n')}${urgencyNote}\n\n${t("actions.modifications.rememberNegotiable")}`;
+    }
+
+    // Fallback to template-based modifications
+    const title = finding.title.toLowerCase();
+    let modifications: string[];
+
+    if (title.includes("termination") || title.includes("cancel")) {
+      modifications = [t("actions.modifications.termination.m1"), t("actions.modifications.termination.m2"), t("actions.modifications.termination.m3")];
+    } else if (title.includes("liability") || title.includes("indemnif")) {
+      modifications = [t("actions.modifications.liability.m1"), t("actions.modifications.liability.m2"), t("actions.modifications.liability.m3")];
+    } else if (title.includes("auto") && title.includes("renew")) {
+      modifications = [t("actions.modifications.autoRenew.m1"), t("actions.modifications.autoRenew.m2"), t("actions.modifications.autoRenew.m3")];
+    } else if (title.includes("payment") || title.includes("fee") || title.includes("price")) {
+      modifications = [t("actions.modifications.payment.m1"), t("actions.modifications.payment.m2"), t("actions.modifications.payment.m3")];
+    } else if (title.includes("data") || title.includes("privacy") || title.includes("confidential")) {
+      modifications = [t("actions.modifications.data.m1"), t("actions.modifications.data.m2"), t("actions.modifications.data.m3")];
+    } else if (title.includes("non-compete") || title.includes("restrict")) {
+      modifications = [t("actions.modifications.nonCompete.m1"), t("actions.modifications.nonCompete.m2"), t("actions.modifications.nonCompete.m3")];
+    } else {
+      modifications = [
+        t("actions.modifications.generic.m1", { title: finding.title }),
+        t("actions.modifications.generic.m2"),
+        t("actions.modifications.generic.m3")
+      ];
     }
 
     const urgencyNote = severity === "critical" || severity === "high"
-      ? "\n\n⚠️ Given the severity, strongly consider addressing this before signing."
+      ? `\n\n${t("actions.modifications.severityWarning")}`
       : "";
 
-    return `Suggested modifications for "${finding.title}":\n\n${modifications.map(m => `• ${m}`).join('\n')}${urgencyNote}\n\nRemember: Everything is negotiable until signed.`;
+    return `${t("actions.modifications.suggestedFor", { title: finding.title })}\n\n${modifications.map(m => `• ${m}`).join('\n')}${urgencyNote}\n\n${t("actions.modifications.rememberNegotiable")}`;
   };
 
-  const generateExpertAdvice = (finding: RedFlag): string => {
+  const getExpertAdviceContent = (finding: RedFlag): string => {
     const severity = finding.severity;
-    const title = finding.title.toLowerCase();
 
-    let professionalType = "a contract attorney";
-    if (title.includes("tax") || title.includes("financial")) {
-      professionalType = "a tax professional or financial advisor";
-    } else if (title.includes("intellectual property") || title.includes("patent") || title.includes("trademark")) {
-      professionalType = "an intellectual property attorney";
-    } else if (title.includes("employ") || title.includes("non-compete")) {
-      professionalType = "an employment lawyer";
-    } else if (title.includes("real estate") || title.includes("lease") || title.includes("property")) {
-      professionalType = "a real estate attorney";
+    // Use LLM-generated professional advice if available
+    if (finding.professional_advice) {
+      const urgency = severity === "critical"
+        ? t("actions.expertAdvice.urgency.critical")
+        : severity === "high"
+        ? t("actions.expertAdvice.urgency.high")
+        : t("actions.expertAdvice.urgency.default");
+
+      return `${finding.professional_advice}\n\n${urgency}\n\n${t("actions.expertAdvice.professionalCan")}\n• ${t("actions.expertAdvice.benefits.b1")}\n• ${t("actions.expertAdvice.benefits.b2")}\n• ${t("actions.expertAdvice.benefits.b3")}\n• ${t("actions.expertAdvice.benefits.b4")}`;
     }
 
-    const urgencyLevel = severity === "critical"
-      ? "This is a critical issue - professional review is strongly recommended before proceeding."
-      : severity === "high"
-      ? "Given the potential impact, professional advice would be valuable here."
-      : "A quick professional review could provide peace of mind.";
+    // Fallback to template-based expert advice
+    const title = finding.title.toLowerCase();
 
-    return `For "${finding.title}", consider consulting ${professionalType}.\n\n${urgencyLevel}\n\nA professional can:\n• Explain the full legal implications specific to your situation\n• Suggest alternative language that better protects your interests\n• Identify if this is a standard industry practice or an unusual term\n• Advise on whether this is a deal-breaker or acceptable risk`;
+    let professionalKey = "contractAttorney";
+    if (title.includes("tax") || title.includes("financial")) {
+      professionalKey = "taxProfessional";
+    } else if (title.includes("intellectual property") || title.includes("patent") || title.includes("trademark")) {
+      professionalKey = "ipAttorney";
+    } else if (title.includes("employ") || title.includes("non-compete")) {
+      professionalKey = "employmentLawyer";
+    } else if (title.includes("real estate") || title.includes("lease") || title.includes("property")) {
+      professionalKey = "realEstateLawyer";
+    }
+
+    const professional = t(`actions.expertAdvice.professionals.${professionalKey}`);
+    const urgency = severity === "critical"
+      ? t("actions.expertAdvice.urgency.critical")
+      : severity === "high"
+      ? t("actions.expertAdvice.urgency.high")
+      : t("actions.expertAdvice.urgency.default");
+
+    return `${t("actions.expertAdvice.considerConsulting", { title: finding.title, professional })}\n\n${urgency}\n\n${t("actions.expertAdvice.professionalCan")}\n• ${t("actions.expertAdvice.benefits.b1")}\n• ${t("actions.expertAdvice.benefits.b2")}\n• ${t("actions.expertAdvice.benefits.b3")}\n• ${t("actions.expertAdvice.benefits.b4")}`;
   };
 
   const actionCards = [
     {
       id: "ask",
       icon: MessageSquare,
-      title: "Ask About This",
-      description: "Questions to ask before signing",
+      title: t("finding.askAboutThis"),
+      description: t("finding.askAboutThisDesc"),
       color: "bg-blue-50 hover:bg-blue-100 border-blue-200",
       iconColor: "text-blue-600",
-      content: generateAskQuestions(finding)
+      content: getAskQuestionsContent(finding)
     },
     {
       id: "modify",
       icon: FileEdit,
-      title: "Request Changes",
-      description: "Suggested modifications",
+      title: t("finding.requestChanges"),
+      description: t("finding.requestChangesDesc"),
       color: "bg-purple-50 hover:bg-purple-100 border-purple-200",
       iconColor: "text-purple-600",
-      content: generateModifications(finding)
+      content: getModificationsContent(finding)
     },
     {
       id: "professional",
       icon: UserCheck,
-      title: "Get Expert Help",
-      description: "When to seek advice",
+      title: t("finding.getExpertHelp"),
+      description: t("finding.getExpertHelpDesc"),
       color: "bg-green-50 hover:bg-green-100 border-green-200",
       iconColor: "text-green-600",
-      content: generateExpertAdvice(finding)
+      content: getExpertAdviceContent(finding)
     },
   ];
 
@@ -227,18 +239,20 @@ export default function FindingDetailPage() {
       {/* Fixed Header - logo stays left */}
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4 h-14 flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(`/analysis/${analysisId}`)}
-            className="gap-2 mr-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-          <div className="flex items-center gap-2">
-            <Image src="/logo.jpg" alt="Clarify" width={28} height={28} className="rounded-lg" />
-            <span className="font-bold text-[#1E3A5F]">Clarify.</span>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/analysis/${analysisId}`)}
+              className="gap-2 mr-4"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t("common.back")}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Image src="/logo.jpg" alt="Clarify" width={28} height={28} className="rounded-lg" />
+              <span className="font-bold text-[#1E3A5F]">{t("common.clarify")}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -254,9 +268,9 @@ export default function FindingDetailPage() {
             <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", config.bgColor)}>
               <SeverityIcon className={cn("w-4 h-4", config.color)} />
             </div>
-            <span className={cn("text-sm font-medium", config.color)}>{config.label}</span>
+            <span className={cn("text-sm font-medium", config.color)}>{t(config.labelKey)}</span>
             {finding.page_number != null && finding.page_number > 0 && (
-              <span className="text-sm text-muted-foreground">• Source: Page {finding.page_number}</span>
+              <span className="text-sm text-muted-foreground">• {t("finding.sourcePage", { page: finding.page_number })}</span>
             )}
           </div>
           <h1 className="text-2xl font-bold text-foreground">{finding.title}</h1>
@@ -273,14 +287,14 @@ export default function FindingDetailPage() {
           >
             {/* The Issue */}
             <div className="bg-muted/30 rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-foreground mb-2">The Issue</h2>
+              <h2 className="text-sm font-semibold text-foreground mb-2">{t("finding.theIssue")}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">{finding.summary}</p>
             </div>
 
             {/* From Your Document */}
             {finding.source_text && (
               <div>
-                <h2 className="text-sm font-semibold text-foreground mb-2">From Your Document</h2>
+                <h2 className="text-sm font-semibold text-foreground mb-2">{t("finding.fromYourDocument")}</h2>
                 <blockquote className="text-sm bg-muted/50 p-3 rounded-lg border-l-4 border-primary italic text-muted-foreground">
                   &ldquo;{finding.source_text}&rdquo;
                 </blockquote>
@@ -289,7 +303,7 @@ export default function FindingDetailPage() {
 
             {/* Why It Matters */}
             <div>
-              <h2 className="text-sm font-semibold text-foreground mb-2">Why It Matters</h2>
+              <h2 className="text-sm font-semibold text-foreground mb-2">{t("finding.whyItMatters")}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">{finding.explanation}</p>
             </div>
           </motion.div>
@@ -301,7 +315,7 @@ export default function FindingDetailPage() {
             transition={{ delay: 0.2 }}
             className="md:col-span-3 space-y-4"
           >
-            <h2 className="text-sm font-semibold text-foreground">What You Can Do</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t("finding.whatYouCanDo")}</h2>
 
             {/* Recommendation */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
@@ -371,12 +385,12 @@ export default function FindingDetailPage() {
             variant="outline"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Analysis
+            {t("analysis.backToAnalysis")}
           </Button>
         </motion.div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Clarify provides educational insights, not legal advice.
+          {t("home.footer")}
         </p>
       </div>
     </main>

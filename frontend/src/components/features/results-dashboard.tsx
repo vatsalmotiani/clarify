@@ -2,38 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { AlertTriangle, AlertCircle, Info, BookOpen, HelpCircle, ChevronRight, AlertOctagon } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, BookOpen, ChevronRight, AlertOctagon, FileDown, Plus, CheckCircle, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ExecutiveSummary } from "./executive-summary";
-import type { AnalysisResult, RedFlag, Scenario, KeyTerm } from "@/types";
+import type { AnalysisResult, RedFlag, KeyTerm } from "@/types";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ResultsDashboardProps {
   result: AnalysisResult;
 }
 
-// Category descriptions
-const categoryDescriptions = {
-  findings: {
-    title: "Issues That Need Your Attention",
-    description: "Click any item to understand what it means for you.",
-  },
-  scenarios: {
-    title: "What Could Happen",
-    description: "Real situations you might face based on this document.",
-  },
-  terms: {
-    title: "Words You Should Know",
-    description: "Legal terms explained simply.",
-  },
-};
-
 export function ResultsDashboard({ result }: ResultsDashboardProps) {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const redFlags = result.red_flags || [];
-  const scenarios = result.scenarios || [];
   const keyTerms = result.key_terms || [];
 
   // Group findings by severity for Kanban board
@@ -43,6 +29,15 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
 
   const handleFindingClick = (finding: RedFlag) => {
     router.push(`/analysis/${result.id}/finding/${finding.id}`);
+  };
+
+  const handleExportPdf = () => {
+    // TODO: Implement PDF export
+    window.print();
+  };
+
+  const handleStartNew = () => {
+    router.push("/");
   };
 
   return (
@@ -57,97 +52,90 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
 
       {/* Main content tabs */}
       <Tabs defaultValue="findings" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
           <TabsTrigger value="findings" className="gap-2 text-sm">
             <AlertTriangle className="w-4 h-4" />
-            Findings
+            {t("results.findings")}
             {redFlags.length > 0 && (
               <Badge variant={criticalFindings.length > 0 ? "destructive" : "secondary"} className="ml-1 text-xs">
                 {redFlags.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="scenarios" className="gap-2 text-sm">
-            <HelpCircle className="w-4 h-4" />
-            Scenarios
-          </TabsTrigger>
           <TabsTrigger value="terms" className="gap-2 text-sm">
             <BookOpen className="w-4 h-4" />
-            Terms
+            {t("results.terms")}
           </TabsTrigger>
         </TabsList>
 
         {/* Findings Tab - Kanban Style */}
         <TabsContent value="findings" className="space-y-4">
           <TabHeader
-            title={categoryDescriptions.findings.title}
-            description={categoryDescriptions.findings.description}
+            title={t("results.findingsTitle")}
+            description={t("results.findingsDesc")}
+            showAiBadge
           />
 
           {redFlags.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <KanbanColumn
-                title="Critical"
+                title={t("results.critical")}
                 icon={<AlertOctagon className="w-4 h-4" />}
                 findings={criticalFindings}
                 onFindingClick={handleFindingClick}
                 colorScheme="red"
+                emptyMessage={t("results.noCritical")}
+                emptyDescription={t("results.noCriticalDesc")}
               />
               <KanbanColumn
-                title="Needs Review"
+                title={t("results.needsReview")}
                 icon={<AlertCircle className="w-4 h-4" />}
                 findings={warningFindings}
                 onFindingClick={handleFindingClick}
                 colorScheme="orange"
+                emptyMessage={t("results.noWarnings")}
+                emptyDescription={t("results.noWarningsDesc")}
               />
               <KanbanColumn
-                title="Good to Know"
+                title={t("results.goodToKnow")}
                 icon={<Info className="w-4 h-4" />}
                 findings={infoFindings}
                 onFindingClick={handleFindingClick}
                 colorScheme="blue"
+                emptyMessage={t("results.noInfo")}
+                emptyDescription={t("results.noInfoDesc")}
               />
             </div>
           ) : (
             <EmptyState
-              icon={<AlertTriangle className="w-10 h-10" />}
-              title="No Issues Found"
-              description="We didn't find any concerning clauses."
+              icon={<CheckCircle className="w-10 h-10 text-green-500" />}
+              title={t("results.noIssuesFound")}
+              description={t("results.noIssuesDesc")}
             />
           )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-3 justify-center pt-4">
+            <Button variant="outline" onClick={handleExportPdf} className="gap-2">
+              <FileDown className="w-4 h-4" />
+              {t("results.exportPdf")}
+            </Button>
+            <Button onClick={handleStartNew} className="gap-2">
+              <Plus className="w-4 h-4" />
+              {t("results.startNewAnalysis")}
+            </Button>
+          </div>
         </TabsContent>
 
-        {/* Scenarios Tab */}
-        <TabsContent value="scenarios" className="space-y-4">
-          <TabHeader
-            title={categoryDescriptions.scenarios.title}
-            description={categoryDescriptions.scenarios.description}
-          />
-
-          {scenarios.length > 0 ? (
-            <div className="space-y-3">
-              {scenarios.map((scenario, index) => (
-                <ScenarioItem key={scenario.id} scenario={scenario} index={index} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<HelpCircle className="w-10 h-10" />}
-              title="No Scenarios"
-              description="No specific scenarios identified."
-            />
-          )}
-        </TabsContent>
-
-        {/* Key Terms Tab - No colors */}
+        {/* Key Terms Tab */}
         <TabsContent value="terms" className="space-y-4">
           <TabHeader
-            title={categoryDescriptions.terms.title}
-            description={categoryDescriptions.terms.description}
+            title={t("results.termsTitle")}
+            description={t("results.termsDesc")}
           />
 
           {keyTerms.length > 0 ? (
-            <div className="space-y-0 divide-y">
+            <div className="grid gap-4">
               {keyTerms.map((term, index) => (
                 <TermItem key={term.term} term={term} index={index} />
               ))}
@@ -155,20 +143,40 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
           ) : (
             <EmptyState
               icon={<BookOpen className="w-10 h-10" />}
-              title="No Special Terms"
-              description="This document uses straightforward language."
+              title={t("results.noSpecialTerms")}
+              description={t("results.noSpecialTermsDesc")}
             />
           )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-3 justify-center pt-4">
+            <Button variant="outline" onClick={handleExportPdf} className="gap-2">
+              <FileDown className="w-4 h-4" />
+              {t("results.exportPdf")}
+            </Button>
+            <Button onClick={handleStartNew} className="gap-2">
+              <Plus className="w-4 h-4" />
+              {t("results.startNewAnalysis")}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function TabHeader({ title, description }: { title: string; description: string }) {
+function TabHeader({ title, description, showAiBadge }: { title: string; description: string; showAiBadge?: boolean }) {
   return (
     <div className="border-b pb-3">
-      <h2 className="font-semibold text-foreground">{title}</h2>
+      <h2 className="font-semibold text-foreground flex items-center gap-2">
+        {title}
+        {showAiBadge && (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            <Sparkles className="w-3 h-3" />
+            AI
+          </span>
+        )}
+      </h2>
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>
   );
@@ -180,9 +188,11 @@ interface KanbanColumnProps {
   findings: RedFlag[];
   onFindingClick: (finding: RedFlag) => void;
   colorScheme: "red" | "orange" | "blue";
+  emptyMessage?: string;
+  emptyDescription?: string;
 }
 
-function KanbanColumn({ title, icon, findings, onFindingClick, colorScheme }: KanbanColumnProps) {
+function KanbanColumn({ title, icon, findings, onFindingClick, colorScheme, emptyMessage, emptyDescription }: KanbanColumnProps) {
   const colors = {
     red: {
       header: "bg-red-500 text-white",
@@ -205,7 +215,7 @@ function KanbanColumn({ title, icon, findings, onFindingClick, colorScheme }: Ka
 
   return (
     <div className="flex flex-col">
-      <div className={cn("rounded-t-lg px-3 py-2 flex items-center gap-2", scheme.header)}>
+      <div className={cn("rounded-t-lg px-3 py-2.5 flex items-center gap-2", scheme.header)}>
         {icon}
         <span className="font-medium text-sm">{title}</span>
         {findings.length > 0 && (
@@ -215,7 +225,7 @@ function KanbanColumn({ title, icon, findings, onFindingClick, colorScheme }: Ka
         )}
       </div>
 
-      <div className={cn("flex-1 rounded-b-lg p-2 space-y-2 min-h-[150px]", scheme.bg)}>
+      <div className={cn("flex-1 rounded-b-lg p-3 space-y-3 min-h-[180px]", scheme.bg)}>
         {findings.length > 0 ? (
           findings.map((finding, index) => (
             <motion.button
@@ -225,68 +235,28 @@ function KanbanColumn({ title, icon, findings, onFindingClick, colorScheme }: Ka
               transition={{ delay: index * 0.03 }}
               onClick={() => onFindingClick(finding)}
               className={cn(
-                "w-full text-left p-4 bg-background rounded-lg border-l-4 shadow-sm transition-all min-h-[80px]",
+                "w-full text-left p-4 bg-background rounded-lg border-l-4 shadow-sm transition-all",
                 "hover:shadow-md cursor-pointer group",
                 scheme.card
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-foreground line-clamp-2 mb-1">
-                    {finding.title}
-                  </h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {finding.summary}
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground shrink-0 mt-1" />
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="font-medium text-base text-foreground line-clamp-2">
+                  {finding.title}
+                </h4>
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground shrink-0" />
               </div>
             </motion.button>
           ))
         ) : (
-          <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
-            None
+          <div className="flex flex-col items-center justify-center h-full text-center px-2 py-4">
+            <CheckCircle className="w-6 h-6 text-green-500 mb-2" />
+            <p className="text-sm font-medium text-foreground">{emptyMessage}</p>
+            <p className="text-xs text-muted-foreground mt-1">{emptyDescription}</p>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-interface ScenarioItemProps {
-  scenario: Scenario;
-  index: number;
-}
-
-function ScenarioItem({ scenario, index }: ScenarioItemProps) {
-  const likelihoodLabels: Record<string, string> = {
-    likely: "Likely",
-    possible: "Possible",
-    unlikely: "Unlikely",
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
-      className="bg-muted/30 rounded-lg p-3"
-    >
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-          {index + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium text-sm text-foreground">{scenario.title}</h4>
-            <span className="text-xs text-muted-foreground">
-              ({likelihoodLabels[scenario.likelihood] || scenario.likelihood})
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">{scenario.description}</p>
-        </div>
-      </div>
-    </motion.div>
   );
 }
 
@@ -296,19 +266,55 @@ interface TermItemProps {
 }
 
 function TermItem({ term, index }: TermItemProps) {
+  // Generate a contextual example based on the term
+  const getExample = (termName: string, definition: string): string => {
+    // This provides a generic contextual hint - the actual example should come from the LLM
+    const lowerTerm = termName.toLowerCase();
+    if (lowerTerm.includes("indemnif") || lowerTerm.includes("liability")) {
+      return "For example, if a service provider damages your property, this clause determines who pays for repairs.";
+    } else if (lowerTerm.includes("terminat") || lowerTerm.includes("cancel")) {
+      return "For example, this determines if you can exit a gym membership early without paying the full year.";
+    } else if (lowerTerm.includes("renew") || lowerTerm.includes("auto")) {
+      return "For example, your streaming subscription might continue charging unless you cancel before the renewal date.";
+    } else if (lowerTerm.includes("confidential") || lowerTerm.includes("nda")) {
+      return "For example, you cannot share trade secrets or business strategies learned during employment.";
+    } else if (lowerTerm.includes("arbitrat") || lowerTerm.includes("dispute")) {
+      return "For example, instead of going to court, you might need to resolve issues through a private arbitrator.";
+    } else if (lowerTerm.includes("warrant")) {
+      return "For example, if a product breaks within the warranty period, the seller must repair or replace it.";
+    } else if (lowerTerm.includes("force majeure") || lowerTerm.includes("act of god")) {
+      return "For example, if a natural disaster prevents delivery, neither party is held responsible.";
+    }
+    return "This term affects your rights and obligations under this agreement.";
+  };
+
+  const importanceColors = {
+    high: "border-l-red-500 bg-red-50/50 dark:bg-red-950/10",
+    medium: "border-l-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/10",
+    low: "border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/10",
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: index * 0.02 }}
-      className="py-3 flex gap-3"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className={cn(
+        "p-5 rounded-lg border-l-4 bg-background shadow-sm",
+        importanceColors[term.importance]
+      )}
     >
-      <span className="text-sm font-medium text-muted-foreground shrink-0 w-6">
-        {index + 1}.
-      </span>
-      <div className="flex-1">
-        <dt className="font-medium text-foreground text-sm">{term.term}</dt>
-        <dd className="text-sm text-muted-foreground mt-0.5">{term.definition}</dd>
+      <div className="flex items-start gap-4">
+        <span className="text-lg font-bold text-muted-foreground/50 shrink-0 w-8">
+          {index + 1}
+        </span>
+        <div className="flex-1 space-y-2">
+          <dt className="font-semibold text-lg text-foreground">{term.term}</dt>
+          <dd className="text-base text-muted-foreground leading-relaxed">{term.definition}</dd>
+          <p className="text-sm text-muted-foreground/80 italic border-t pt-2 mt-2">
+            {getExample(term.term, term.definition)}
+          </p>
+        </div>
       </div>
     </motion.div>
   );

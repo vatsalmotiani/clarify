@@ -6,7 +6,8 @@ from app.models.schemas import (
     DomainDetectionResult,
     IntentSelectionRequest,
     IntentSelectionResponse,
-    IntentOption
+    IntentOption,
+    StartAnalysisRequest
 )
 from app.core.dependencies import get_supabase_client, get_current_user_from_request
 from app.prompts.domain_prompts import DOMAIN_TAXONOMY, ALLOWED_DOMAINS
@@ -40,20 +41,25 @@ def calculate_progress(step: str) -> int:
 @router.post("/analysis/{analysis_id}/start")
 async def start_analysis(
     analysis_id: str,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    request: StartAnalysisRequest = None
 ):
     """
     Start the analysis workflow for uploaded documents.
     Runs in background, client polls for status.
+    Accepts optional language parameter for LLM outputs.
     """
     from app.graph.workflow import run_analysis_workflow
 
-    logger.info(f"🚀 Starting analysis workflow for {analysis_id}")
+    # Get language from request, default to English
+    language = request.language if request else "English"
 
-    # Run workflow in background
-    background_tasks.add_task(run_analysis_workflow, analysis_id)
+    logger.info(f"🚀 Starting analysis workflow for {analysis_id} (language: {language})")
 
-    return {"status": "started", "analysis_id": analysis_id}
+    # Run workflow in background with language
+    background_tasks.add_task(run_analysis_workflow, analysis_id, language)
+
+    return {"status": "started", "analysis_id": analysis_id, "language": language}
 
 
 @router.get("/analysis/{analysis_id}/status", response_model=AnalysisStatus)

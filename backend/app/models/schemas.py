@@ -101,6 +101,10 @@ class DomainDetectionResult(BaseModel):
     allowed_domains: Optional[List[str]] = None
 
 
+class StartAnalysisRequest(BaseModel):
+    language: str = "English"  # Language for LLM outputs
+
+
 class IntentSelectionRequest(BaseModel):
     intent_id: str
     custom_intent: Optional[str] = None

@@ -19,43 +19,69 @@ from app.core.logging import get_logger
 logger = get_logger("clarify.workflow")
 
 
-async def run_analysis_workflow(analysis_id: str):
+async def run_analysis_workflow(analysis_id: str, language: str = "English"):
     """
     Run the initial analysis workflow (upload files + detect domain).
     Pauses for user intent selection.
+
+    Args:
+        analysis_id: Unique identifier for the analysis
+        language: Language for LLM outputs (e.g., "English", "Hindi", "Marathi")
     """
     workflow_start = time.time()
     logger.info(f"{'='*60}")
-    logger.info(f"WORKFLOW START: {analysis_id}")
+    logger.info(f"WORKFLOW START: {analysis_id} (language: {language})")
     logger.info(f"{'='*60}")
 
     supabase = get_supabase_client()
 
-    # Create initial analysis record
+    # Create initial analysis record with language
     if supabase:
         try:
             logger.debug(f"Creating analysis record in database...")
-            supabase.table("analyses").insert({
-                "id": analysis_id,
-                "document_names": [],
-                "domain": "",
-                "intent": "",
-                "overall_score": 0,
-                "score_components": {},
-                "red_flags": [],
-                "scenarios": [],
-                "key_terms": [],
-                "missing_clauses": [],
-                "openai_file_ids": [],
-                "current_step": "uploading"
-            }).execute()
-            logger.info(f"Analysis record created in database")
+            # Try to insert with language column first
+            try:
+                supabase.table("analyses").insert({
+                    "id": analysis_id,
+                    "document_names": [],
+                    "domain": "",
+                    "intent": "",
+                    "language": language,
+                    "overall_score": 0,
+                    "score_components": {},
+                    "red_flags": [],
+                    "scenarios": [],
+                    "key_terms": [],
+                    "missing_clauses": [],
+                    "openai_file_ids": [],
+                    "current_step": "uploading"
+                }).execute()
+                logger.info(f"Analysis record created in database (language: {language})")
+            except Exception as lang_err:
+                # If language column doesn't exist, try without it
+                logger.warning(f"Insert with language failed, trying without: {lang_err}")
+                supabase.table("analyses").insert({
+                    "id": analysis_id,
+                    "document_names": [],
+                    "domain": "",
+                    "intent": "",
+                    "overall_score": 0,
+                    "score_components": {},
+                    "red_flags": [],
+                    "scenarios": [],
+                    "key_terms": [],
+                    "missing_clauses": [],
+                    "openai_file_ids": [],
+                    "current_step": "uploading"
+                }).execute()
+                logger.info(f"Analysis record created in database (without language column)")
         except Exception as e:
             logger.error(f"Failed to create analysis record: {e}")
 
     # Initialize state
     state: AnalysisState = {
         "analysis_id": analysis_id,
+        "language": language,
         "openai_file_ids": [],
         "files_metadata": [],
         "domain": "",
@@ -202,6 +228,7 @@ async def reconstruct_state(analysis_id: str, supabase) -> AnalysisState:
     """
     state: AnalysisState = {
         "analysis_id": analysis_id,
+        "language": "English",
         "openai_file_ids": [],
         "files_metadata": [],
         "domain": "",
@@ -228,20 +255,28 @@ async def reconstruct_state(analysis_id: str, supabase) -> AnalysisState:
         "errors": []
     }
 
-    # Get data from database
+    # Get data from database including language (language column may not exist)
     if supabase:
         try:
-            result = supabase.table("analyses").select(
-                "domain, domain_confidence, document_names, openai_file_ids"
-            ).eq("id", analysis_id).single().execute()
+            # Try with language column first
+            try:
+                result = supabase.table("analyses").select(
+                    "domain, domain_confidence, document_names, openai_file_ids, language"
+                ).eq("id", analysis_id).single().execute()
+            except Exception:
+                # Fallback without language column
+                result = supabase.table("analyses").select(
+                    "domain, domain_confidence, document_names, openai_file_ids"
+                ).eq("id", analysis_id).single().execute()
 
             if result.data:
                 state["domain"] = result.data.get("domain", "")
                 state["domain_confidence"] = result.data.get("domain_confidence", 0.0)
                 state["document_names"] = result.data.get("document_names", [])
                 state["openai_file_ids"] = result.data.get("openai_file_ids", [])
+                state["language"] = result.data.get("language", "English")
 
-                logger.info(f"   Retrieved {len(state['openai_file_ids'])} file ID(s) from database")
+                logger.info(f"   Retrieved {len(state['openai_file_ids'])} file ID(s) from database (language: {state['language']})")
         except Exception as e:
             logger.warning(f"Failed to get state from database: {e}")
 

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload, File, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface FileDropzoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -24,27 +25,26 @@ export function FileDropzone({
 }: FileDropzoneProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: unknown[]) => {
       setError(null);
 
       if (rejectedFiles.length > 0) {
-        setError(
-          `Some files were rejected. Only PDFs up to ${maxSizeMB}MB are allowed.`
-        );
+        setError(t("upload.rejected", { maxSize: maxSizeMB }));
         return;
       }
 
       const newFiles = [...selectedFiles, ...acceptedFiles].slice(0, maxFiles);
 
       if (selectedFiles.length + acceptedFiles.length > maxFiles) {
-        setError(`Maximum ${maxFiles} files allowed.`);
+        setError(t("upload.maxFiles", { maxFiles }));
       }
 
       setSelectedFiles(newFiles);
     },
-    [selectedFiles, maxFiles, maxSizeMB]
+    [selectedFiles, maxFiles, maxSizeMB, t]
   );
 
   const removeFile = (index: number) => {
@@ -106,15 +106,15 @@ export function FileDropzone({
           <div>
             <p className="text-lg font-medium">
               {isDragActive
-                ? "Drop your documents here"
-                : "Drag & drop your documents"}
+                ? t("upload.dropHere")
+                : t("upload.dragDrop")}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              or click to browse (PDF only, max {maxSizeMB}MB each)
+              {t("upload.orBrowse", { maxSize: maxSizeMB })}
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Up to {maxFiles} files allowed
+            {t("upload.filesAllowed", { maxFiles })}
           </p>
         </div>
       </div>
@@ -188,7 +188,7 @@ export function FileDropzone({
             size="lg"
             className="w-full max-w-xs"
           >
-            Clarify
+            {t("upload.clarifyButton")}
           </Button>
         </motion.div>
       )}

@@ -31,6 +31,9 @@ export interface RedFlag {
   source_text: string;
   page_number: number;
   recommendation: string;
+  questions_to_ask?: string[];
+  suggested_changes?: string[];
+  professional_advice?: string;
 }
 
 export interface Scenario {

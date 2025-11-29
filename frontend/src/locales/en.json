@@ -1,0 +1,241 @@
+{
+  "common": {
+    "clarify": "Clarify.",
+    "back": "Back",
+    "continue": "Continue",
+    "starting": "Starting...",
+    "loading": "Loading...",
+    "tryAgain": "Try Again",
+    "goBack": "Go Back",
+    "none": "None"
+  },
+  "home": {
+    "tagline": "Confusion costs. Clarity protects.",
+    "title": "Know What You're Signing",
+    "subtitle": "Upload any contract. Understand every detail before you sign.",
+    "featureLoopholes": "Find Loopholes",
+    "featureLoopholesDesc": "Hidden fees, one-sided terms, automatic renewals.",
+    "featureShield": "Your Shield",
+    "featureShieldDesc": "Know what to ask before you commit.",
+    "featureMultilingual": "Multilingual Support",
+    "featureMultilingualDesc": "Analyze documents and get insights in 10+ Indian languages.",
+    "footer": "Clarify provides educational insights, not legal advice."
+  },
+  "upload": {
+    "dragDrop": "Drag & drop your documents",
+    "dropHere": "Drop your documents here",
+    "orBrowse": "or click to browse (PDF only, max {maxSize}MB each)",
+    "filesAllowed": "Up to {maxFiles} files allowed",
+    "clarifyButton": "Clarify",
+    "rejected": "Some files were rejected. Only PDFs up to {maxSize}MB are allowed.",
+    "maxFiles": "Maximum {maxFiles} files allowed.",
+    "uploadError": "Failed to upload documents. Please try again.",
+    "uploadingDocs": "Uploading your documents...",
+    "startingProcessing": "Starting document processing..."
+  },
+  "analysis": {
+    "backToAnalysis": "Back to Analysis",
+    "somethingWentWrong": "Something went wrong",
+    "analyzingDocs": "Analyzing your documents..."
+  },
+  "intent": {
+    "documentType": "Document type:",
+    "whatsYourGoal": "What's your goal?",
+    "domains": {
+      "real_estate": "Real Estate",
+      "employment": "Employment",
+      "finance": "Finance",
+      "rental": "Rental/Lease",
+      "insurance": "Insurance",
+      "legal_agreement": "Legal Agreement"
+    }
+  },
+  "processing": {
+    "didYouKnow": "Did you know?",
+    "steps": {
+      "scanning": "Scanning for hidden clauses",
+      "scanningFact": "73% of contracts contain terms that favor one party significantly",
+      "lookingFees": "Looking for buried fees",
+      "lookingFeesFact": "The average person misses 3-5 important clauses per contract",
+      "identifyingFlags": "Identifying red flags",
+      "identifyingFlagsFact": "1 in 4 contracts have automatic renewal clauses that catch people off guard",
+      "spottingLoopholes": "Spotting loopholes",
+      "spottingLoopholesFact": "Most people spend less than 5 minutes reading contracts they sign",
+      "checkingBalance": "Checking for balance",
+      "checkingBalanceFact": "Unfair termination clauses are found in 60% of service agreements",
+      "findingMissing": "Finding what's missing",
+      "findingMissingFact": "Key protections are often absent from standard templates"
+    }
+  },
+  "results": {
+    "findings": "Findings",
+    "scenarios": "Scenarios",
+    "terms": "Glossary",
+    "findingsTitle": "AI-Powered Document Analysis",
+    "findingsDesc": "Click any item to understand what it means for you.",
+    "scenariosTitle": "What Could Happen",
+    "scenariosDesc": "Real situations you might face based on this document.",
+    "termsTitle": "Key Terms Explained",
+    "termsDesc": "Important terms from your document, explained with real-world context.",
+    "critical": "Critical",
+    "needsReview": "Needs Review",
+    "goodToKnow": "Good to Know",
+    "noIssuesFound": "No Issues Found",
+    "noIssuesDesc": "We didn't find any concerning clauses.",
+    "noScenarios": "No Scenarios",
+    "noScenariosDesc": "No specific scenarios identified.",
+    "noSpecialTerms": "No Special Terms",
+    "noSpecialTermsDesc": "This document uses straightforward language.",
+    "noCritical": "No critical issues found",
+    "noCriticalDesc": "Great news! This section is clear of major concerns.",
+    "noWarnings": "No warnings to report",
+    "noWarningsDesc": "This area looks balanced and fair.",
+    "noInfo": "Nothing additional to note",
+    "noInfoDesc": "No minor points to highlight here.",
+    "summary": "Summary",
+    "defaultSummary": "Analysis complete. Review the findings below for detailed insights.",
+    "finding": "finding",
+    "findings_plural": "findings",
+    "exportPdf": "Export to PDF",
+    "startNewAnalysis": "Start New Analysis"
+  },
+  "score": {
+    "lookingGood": "Looking Good",
+    "needsAttention": "Needs Attention",
+    "reviewCarefully": "Review Carefully",
+    "significantConcerns": "Significant Concerns"
+  },
+  "severity": {
+    "critical": "Critical",
+    "high": "High Priority",
+    "medium": "Medium",
+    "low": "Low",
+    "info": "Info"
+  },
+  "likelihood": {
+    "likely": "Likely",
+    "possible": "Possible",
+    "unlikely": "Unlikely"
+  },
+  "finding": {
+    "sourcePage": "Source: Page {page}",
+    "theIssue": "The Issue",
+    "fromYourDocument": "From Your Document",
+    "whyItMatters": "Why It Matters",
+    "whatYouCanDo": "What You Can Do",
+    "findingNotFound": "Finding not found",
+    "askAboutThis": "Ask About This",
+    "askAboutThisDesc": "Questions to ask before signing",
+    "requestChanges": "Request Changes",
+    "requestChangesDesc": "Suggested modifications",
+    "getExpertHelp": "Get Expert Help",
+    "getExpertHelpDesc": "When to seek advice"
+  },
+  "actions": {
+    "askQuestions": {
+      "beforeSigning": "Before signing, ask about \"{title}\":",
+      "helpNegotiate": "These questions help you understand the intent and may reveal room for negotiation.",
+      "termination": {
+        "q1": "\"What are the specific conditions under which either party can terminate?\"",
+        "q2": "\"Is there a notice period required, and can it be negotiated?\"",
+        "q3": "\"What happens to any prepaid fees if the contract is terminated early?\""
+      },
+      "liability": {
+        "q1": "\"Can you cap the liability to a specific dollar amount?\"",
+        "q2": "\"What insurance coverage do you have for these liabilities?\"",
+        "q3": "\"Are there any exclusions to this liability clause?\""
+      },
+      "autoRenew": {
+        "q1": "\"Can we change this to require active opt-in for renewal?\"",
+        "q2": "\"What is the deadline to cancel before auto-renewal?\"",
+        "q3": "\"Will you notify me before the renewal date?\""
+      },
+      "payment": {
+        "q1": "\"Are there any hidden fees or additional charges not listed?\"",
+        "q2": "\"What happens if I miss a payment deadline?\"",
+        "q3": "\"Can the pricing change during the contract term?\""
+      },
+      "data": {
+        "q1": "\"How will my data be stored and protected?\"",
+        "q2": "\"Who has access to my information?\"",
+        "q3": "\"What happens to my data if I terminate the agreement?\""
+      },
+      "nonCompete": {
+        "q1": "\"What is the geographic scope of this restriction?\"",
+        "q2": "\"How long does this restriction last after the contract ends?\"",
+        "q3": "\"What specific activities are prohibited?\""
+      },
+      "generic": {
+        "q1": "\"Can you explain why '{title}' is structured this way?\"",
+        "q2": "\"Is there flexibility to modify this specific term?\"",
+        "q3": "\"What would happen if we removed or changed this clause?\""
+      }
+    },
+    "modifications": {
+      "suggestedFor": "Suggested modifications for \"{title}\":",
+      "rememberNegotiable": "Remember: Everything is negotiable until signed.",
+      "severityWarning": "Given the severity, strongly consider addressing this before signing.",
+      "termination": {
+        "m1": "Request a mutual termination clause with equal notice periods for both parties",
+        "m2": "Add a 'cure period' allowing time to fix issues before termination",
+        "m3": "Include prorated refund terms for early termination"
+      },
+      "liability": {
+        "m1": "Cap liability to the total contract value or a specific amount",
+        "m2": "Exclude consequential and indirect damages",
+        "m3": "Require the other party to maintain adequate insurance"
+      },
+      "autoRenew": {
+        "m1": "Change to opt-in renewal requiring written consent",
+        "m2": "Extend the cancellation notice period to 60 or 90 days",
+        "m3": "Add a requirement for renewal reminder notifications"
+      },
+      "payment": {
+        "m1": "Lock in pricing for the full contract term",
+        "m2": "Add a grace period for late payments before penalties apply",
+        "m3": "Cap any price increases to a fixed percentage"
+      },
+      "data": {
+        "m1": "Add specific data deletion requirements upon termination",
+        "m2": "Require notification within 24-48 hours of any data breach",
+        "m3": "Limit data usage to only what's necessary for the service"
+      },
+      "nonCompete": {
+        "m1": "Narrow the geographic scope to a specific region",
+        "m2": "Reduce the duration of the restriction",
+        "m3": "Add specific carve-outs for your core business activities"
+      },
+      "generic": {
+        "m1": "Request clearer language defining the scope of \"{title}\"",
+        "m2": "Add specific limits or boundaries to reduce your exposure",
+        "m3": "Include exceptions for reasonable circumstances"
+      }
+    },
+    "expertAdvice": {
+      "considerConsulting": "For \"{title}\", consider consulting {professional}.",
+      "professionals": {
+        "contractAttorney": "a contract attorney",
+        "taxProfessional": "a tax professional or financial advisor",
+        "ipAttorney": "an intellectual property attorney",
+        "employmentLawyer": "an employment lawyer",
+        "realEstateLawyer": "a real estate attorney"
+      },
+      "urgency": {
+        "critical": "This is a critical issue - professional review is strongly recommended before proceeding.",
+        "high": "Given the potential impact, professional advice would be valuable here.",
+        "default": "A quick professional review could provide peace of mind."
+      },
+      "professionalCan": "A professional can:",
+      "benefits": {
+        "b1": "Explain the full legal implications specific to your situation",
+        "b2": "Suggest alternative language that better protects your interests",
+        "b3": "Identify if this is a standard industry practice or an unusual term",
+        "b4": "Advise on whether this is a deal-breaker or acceptable risk"
+      }
+    }
+  },
+  "language": {
+    "select": "Select Language",
+    "search": "Search languages..."
+  }
+}

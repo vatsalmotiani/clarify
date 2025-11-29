@@ -169,12 +169,13 @@ async def analysis_node(state: AnalysisState) -> Dict[str, Any]:
         }
 
     try:
-        # Analyze document using file references
+        # Analyze document using file references with language preference
         result = await analysis_service.analyze_document_with_files(
             file_ids=file_ids,
             domain=state["domain"],
             intent=state["selected_intent"],
-            user_notes=state.get("custom_intent")
+            user_notes=state.get("custom_intent"),
+            language=state.get("language", "English")
         )
 
         logger.info(f"Analysis complete - Score: {result.get('smart_score', 0)}/100")

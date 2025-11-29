@@ -151,9 +151,23 @@ ANALYSIS_SCHEMA = {
                         "recommendation": {
                             "type": "string",
                             "description": "What the user should do about this"
+                        },
+                        "questions_to_ask": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "3 specific questions to ask the other party about this issue"
+                        },
+                        "suggested_changes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "3 specific modifications to request for this clause"
+                        },
+                        "professional_advice": {
+                            "type": "string",
+                            "description": "Specific advice about when and what type of professional to consult for this issue"
                         }
                     },
-                    "required": ["id", "title", "severity", "summary", "explanation", "source_text", "page_number", "recommendation"],
+                    "required": ["id", "title", "severity", "summary", "explanation", "source_text", "page_number", "recommendation", "questions_to_ask", "suggested_changes", "professional_advice"],
                     "additionalProperties": False
                 },
                 "description": "Issues and concerns found in the document"
